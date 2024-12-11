@@ -1,8 +1,6 @@
 # Original idea by @ISnackable. Thanks to him for handling the hardest parts!
 # https://github.com/ISnackable/CercubePlus/blob/main/.github/workflows/Build.yml
-
 name: Build and Release uYouPlus
-
 on:
   workflow_dispatch:
     inputs:
