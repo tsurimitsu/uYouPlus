@@ -1,6 +1,8 @@
 # Original idea by @ISnackable. Thanks to him for handling the hardest parts!
 # https://github.com/ISnackable/CercubePlus/blob/main/.github/workflows/Build.yml
+
 name: Build and Release uYouPlus
+
 on:
   workflow_dispatch:
     inputs:
@@ -108,15 +110,14 @@ jobs:
         env:
           THEOS: ${{ github.workspace }}/theos
 
-- name: Prepare YouTube iPA
-  id: prepare_youtube
-  run: |
-    wget "$YOUTUBE_URL" --no-verbose -O main/YouTube.ipa
-    youtube_version=$(defaults read "$(pwd)/main/YouTube.ipa/Payload/YouTube.app/Info" CFBundleVersion)
-    echo "==> YouTube v$youtube_version downloaded!"
-    sed -i '' "17s#.*#YOUTUBE_VERSION = ${youtube_version}#g" Makefile
-    echo "youtube_version=${youtube_version}" >> $GITHUB_OUTPUT
-
+      - name: Prepare YouTube iPA
+        id: prepare_youtube
+        run: |
+          wget "$YOUTUBE_URL" --no-verbose -O main/YouTube.ipa
+          youtube_version=$(defaults read "$(pwd)/main/YouTube.ipa/Payload/YouTube.app/Info" CFBundleVersion)
+          echo "==> YouTube v$youtube_version downloaded!"
+          sed -i '' "17s#.*#YOUTUBE_VERSION = ${youtube_version}#g" Makefile
+          echo "youtube_version=${youtube_version}" >> $GITHUB_OUTPUT
         env:
           THEOS: ${{ github.workspace }}/theos
           YOUTUBE_URL: ${{ inputs.decrypted_youtube_url }}
@@ -132,7 +133,6 @@ jobs:
           echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
           echo -e "==> \033[1mSHASUM256: $(shasum -a 256 packages/*.ipa | cut -f1 -d' ')\033[0m"
           echo -e "==> \033[1mBundle ID: ${{ env.BUNDLE_ID }}\033[0m"
-
         env:
           THEOS: ${{ github.workspace }}/theos
           UYOU_VERSION: ${{ inputs.uyou_version }}
@@ -142,24 +142,19 @@ jobs:
       - name: Upload Artifact
         if: ${{ inputs.upload_artifact }}
         uses: actions/upload-artifact@v4.4.3
-        env:
-          UYOU_VERSION: ${{ inputs.uyou_version }}
-          YOUTUBE_VERSION: ${{ steps.prepare_youtube.outputs.youtube_version }}
         with:
-          name: uYouPlus_${{ env.YOUTUBE_VERSION }}_${{ env.UYOU_VERSION }}
+          name: uYouPlus_${{ inputs.uyou_version }}
           path: ${{ github.workspace }}/main/packages/${{ steps.build_package.outputs.package }}
           if-no-files-found: error
 
       - name: Create Release
+        if: ${{ inputs.create_release }}
         id: create_release
         uses: qnblackcat/action-gh-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          UYOU_VERSION: ${{ inputs.uyou_version }}
-          YOUTUBE_VERSION: ${{ steps.prepare_youtube.outputs.youtube_version }}
-          DRAFT: ${{ inputs.create_release }}
         with:
-          tag_name: v${{ env.YOUTUBE_VERSION }}-${{ env.UYOU_VERSION }}-(${{ github.run_number }})
-          name: v${{ env.YOUTUBE_VERSION }}-${{ env.UYOU_VERSION }}-(${{ github.run_number }})
+          tag_name: v${{ inputs.uyou_version }}
+          name: v${{ inputs.uyou_version }}
           files: main/packages/*.ipa
-          draft: ${{ env.DRAFT }}
+          draft: ${{ inputs.create_release }}
