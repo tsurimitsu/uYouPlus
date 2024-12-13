@@ -114,9 +114,13 @@ jobs:
         id: prepare_youtube
         run: |
           wget "$YOUTUBE_URL" --no-verbose -O main/YouTube.ipa
-          youtube_version="19.19.5"
+          youtube_version=$(defaults read "$(pwd)/main/YouTube.ipa/Payload/YouTube.app/Info" CFBundleVersion)
           echo "==> YouTube v$youtube_version downloaded!"
-          sed -i '' "17s#.*#YOUTUBE_VERSION = ${youtube_version}#g" Makefile
+          if [ ! -f "main/Makefile" ]; then
+            echo "Error: Makefile not found in the main directory."
+            exit 1
+          fi
+          sed -i '' "17s#.*#YOUTUBE_VERSION = ${youtube_version}#g" main/Makefile
           echo "youtube_version=${youtube_version}" >> $GITHUB_OUTPUT
         env:
           THEOS: ${{ github.workspace }}/theos
